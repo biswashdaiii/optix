@@ -11,6 +11,7 @@ import AddProduct from './admin/AddProduct';
 import Shop from './core/Shop';
 import Product from './core/Product';
 import Cart from './core/Cart';
+import Wishlist from './core/wishlist'; // ADD THIS IMPORT
 import Orders from './admin/Orders';
 import Profile from './user/Profile';
 import ManageProducts from './admin/ManageProducts';
@@ -18,17 +19,22 @@ import UpdateProduct from './admin/UpdateProduct';
 import CategoryList from './admin/CategoryList';
 import UsersList from './admin/UsersList';
 import NotFound from './core/NotFound';
+import AboutUs from "./core/AboutUs";
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path='/' element={<Home />} />
         <Route path='/shop' element={<Shop />} />
         <Route path='/signin' element={<Signin />} />
         <Route path='/signup' element={<Signup />} />
         <Route path='/product/:productId' element={<Product />} />
         <Route path='/cart' element={<Cart />} />
+        <Route path='/wishlist' element={<Wishlist />} /> {/* ADD THIS ROUTE */}
+        <Route path="/about" element={<AboutUs />} />
+
 
         {/* Private Routes */}
         <Route

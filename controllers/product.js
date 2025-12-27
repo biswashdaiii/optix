@@ -34,29 +34,26 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: 'Image could not be uploaded' });
     }
 
-    const { name, description, price, category, quantity, shipping } = fields;
+   const name = fields.name[0];
+const description = fields.description[0];
+const price = fields.price[0];
+const category = fields.category[0];
+const quantity = fields.quantity[0];
+const shipping = fields.shipping[0];
 
-    if (
-      !name ||
-      !description ||
-      !price ||
-      !category ||
-      !quantity ||
-      !shipping
-    ) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
+if (!name || !description || !price || !category || !quantity || !shipping) {
+  return res.status(400).json({ error: 'All fields are required' });
+}
 
-    let product = new Product(fields);
+let product = new Product({ name, description, price, category, quantity, shipping });
 
-    if (files.photo) {
-      if (files.photo.size > 1000000) {
-        return res
-          .status(400)
-          .json({ error: 'Image should be less than 1MB in size' });
+
+    if (files.photo && files.photo.length > 0 && files.photo[0].filepath) {
+      if (files.photo[0].size > 1000000) {
+        return res.status(400).json({ error: 'Image should be less than 1MB in size' });
       }
-      product.photo.data = fs.readFileSync(files.photo.path);
-      product.photo.contentType = files.photo.type;
+      product.photo.data = fs.readFileSync(files.photo[0].filepath);
+      product.photo.contentType = files.photo[0].mimetype;
     }
 
     try {
@@ -92,14 +89,12 @@ exports.update = async (req, res) => {
     let product = req.product;
     product = _.extend(product, fields);
 
-    if (files.photo) {
-      if (files.photo.size > 1000000) {
-        return res
-          .status(400)
-          .json({ error: 'Image should be less than 1MB in size' });
+    if (files.photo && files.photo.length > 0 && files.photo[0].filepath) {
+      if (files.photo[0].size > 1000000) {
+        return res.status(400).json({ error: 'Image should be less than 1MB in size' });
       }
-      product.photo.data = fs.readFileSync(files.photo.path);
-      product.photo.contentType = files.photo.type;
+      product.photo.data = fs.readFileSync(files.photo[0].filepath);
+      product.photo.contentType = files.photo[0].mimetype;
     }
 
     try {

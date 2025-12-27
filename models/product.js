@@ -40,6 +40,8 @@ const productSchema = new mongoose.Schema(
       required: false,
       type: Boolean,
     },
+    model3D: { 
+      type: String },
   },
   { timestamps: true }
 );

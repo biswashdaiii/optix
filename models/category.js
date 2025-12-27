@@ -7,10 +7,25 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       required: true,
       maxlength: 32,
-      unique: true,
+    },
+    gender: {
+      type: String,
+      enum: ['Men', 'Women', 'Unisex'],
+      required: true,
+    },
+    parentCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+    },
+    isParent: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
 );
+
+categorySchema.index({ name: 1, gender: 1 }, { unique: true });
 
 module.exports = mongoose.model('Category', categorySchema);
