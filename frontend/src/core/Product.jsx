@@ -6,6 +6,7 @@ import Card from './Card';
 import ShowImage from './ShowImage';
 import { addItem } from './cartHelpers';
 import moment from 'moment';
+import VirtualTryOn from './../components/VirtualTryOn.jsx';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -29,6 +30,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReplayIcon from '@mui/icons-material/Replay';
 import StarIcon from '@mui/icons-material/Star';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Color palette
 const PRIMARY_COLOR = '#0A6A7A';
@@ -117,6 +120,15 @@ const StyledButton = styled(Button)(({ theme }) => ({
       transform: 'translateY(-2px)',
     },
   },
+  '&.tryon': {
+    backgroundColor: '#FF4444',
+    color: 'white',
+    '&:hover': {
+      backgroundColor: '#E63939',
+      boxShadow: '0 4px 12px rgba(255,68,68,0.3)',
+      transform: 'translateY(-2px)',
+    },
+  },
   '&:disabled': {
     backgroundColor: '#E5E8EB',
     color: '#A0A6B1',
@@ -147,7 +159,7 @@ const InfoLabel = styled(Typography)(({ theme }) => ({
   fontSize: '0.9rem',
 }));
 
-const InfoValue = styled(Typography)(({ theme }) => ({
+const InfoValue = styled(Box)(({ theme }) => ({  // Changed from Typography to Box
   flex: 1,
   color: '#4B5563',
   fontSize: '0.9rem',
@@ -191,6 +203,7 @@ const Product = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [showTryOn, setShowTryOn] = useState(false);
 
   const { productId } = useParams();
 
@@ -496,8 +509,8 @@ const Product = () => {
                     </Box>
                   </Box>
 
-                  {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                  {/* Action Buttons - UPDATED WITH VIRTUAL TRY-ON */}
+                  <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                     <StyledButton
                       className='secondary'
                       startIcon={<ShoppingCartIcon />}
@@ -514,6 +527,14 @@ const Product = () => {
                       sx={{ width: '197px', height: '48px', padding: 0 }}
                     >
                       Buy Now
+                    </StyledButton>
+                    <StyledButton
+                      className='tryon'
+                      startIcon={showTryOn ? <CloseIcon /> : <VisibilityIcon />}
+                      onClick={() => setShowTryOn(!showTryOn)}
+                      sx={{ width: '197px', height: '48px', padding: 0 }}
+                    >
+                      {showTryOn ? 'Close Try-On' : 'Virtual Try-On'}
                     </StyledButton>
                   </Box>
 
@@ -611,6 +632,13 @@ const Product = () => {
                 </ProductInfoSection>
               </Grid>
             </Grid>
+          )}
+
+          {/* VIRTUAL TRY-ON SECTION - NEW */}
+          {showTryOn && product && (
+            <Box sx={{ mb: 6 }}>
+              <VirtualTryOn product={product} />
+            </Box>
           )}
 
           {/* Related Products Section */}
