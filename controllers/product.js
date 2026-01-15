@@ -1,6 +1,7 @@
 const formidable = require('formidable');
 const _ = require('lodash');
 const fs = require('fs');
+const path = require('path');
 const Product = require('../models/product');
 const { errorHandler } = require('../helpers/dbErrorHandler');
 
@@ -34,18 +35,18 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: 'Image could not be uploaded' });
     }
 
-   const name = fields.name[0];
-const description = fields.description[0];
-const price = fields.price[0];
-const category = fields.category[0];
-const quantity = fields.quantity[0];
-const shipping = fields.shipping[0];
+    const name = fields.name[0];
+    const description = fields.description[0];
+    const price = fields.price[0];
+    const category = fields.category[0];
+    const quantity = fields.quantity[0];
+    const shipping = fields.shipping[0];
 
-if (!name || !description || !price || !category || !quantity || !shipping) {
-  return res.status(400).json({ error: 'All fields are required' });
-}
+    if (!name || !description || !price || !category || !quantity || !shipping) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
-let product = new Product({ name, description, price, category, quantity, shipping });
+    let product = new Product({ name, description, price, category, quantity, shipping });
 
 
     if (files.photo && files.photo.length > 0 && files.photo[0].filepath) {
@@ -54,6 +55,40 @@ let product = new Product({ name, description, price, category, quantity, shippi
       }
       product.photo.data = fs.readFileSync(files.photo[0].filepath);
       product.photo.contentType = files.photo[0].mimetype;
+    }
+
+    // Handle 3D Model Upload
+    console.log('--- Product Create Debug ---');
+    if (files.model3D) {
+      console.log('Model3D received. Length:', files.model3D.length);
+    } else {
+      console.log('No Model3D file.');
+    }
+
+    if (files.model3D && files.model3D.length > 0 && files.model3D[0].filepath) {
+      console.log('Processing model...');
+      try {
+        const file = files.model3D[0];
+        console.log('File object:', file);
+        const oldPath = file.filepath;
+        const originalName = file.originalFilename || '';
+        const extension = path.extname(originalName);
+        console.log('Extension:', extension);
+
+        const newFileName = `model-${Date.now()}${extension}`;
+        const newPath = path.join(__dirname, '../uploads', newFileName);
+
+        console.log('Reading from:', oldPath);
+        const data = fs.readFileSync(oldPath);
+        console.log('Writing to:', newPath);
+        fs.writeFileSync(newPath, data);
+
+        product.model3D = `/uploads/${newFileName}`;
+        console.log('Model saved at:', product.model3D);
+      } catch (error) {
+        console.error('Error handling 3D model:', error);
+        return res.status(400).json({ error: 'Could not upload 3D model' });
+      }
     }
 
     try {
@@ -95,6 +130,28 @@ exports.update = async (req, res) => {
       }
       product.photo.data = fs.readFileSync(files.photo[0].filepath);
       product.photo.contentType = files.photo[0].mimetype;
+    }
+
+    // Handle 3D Model Upload (Update)
+    if (files.model3D && files.model3D.length > 0 && files.model3D[0].filepath) {
+      console.log('Processing update model...');
+      try {
+        const file = files.model3D[0];
+        const oldPath = file.filepath;
+        const originalName = file.originalFilename || '';
+        const extension = path.extname(originalName);
+        const newFileName = `model-${Date.now()}${extension}`;
+        const newPath = path.join(__dirname, '../uploads', newFileName);
+
+        console.log('Update: Reading from:', oldPath);
+        const data = fs.readFileSync(oldPath);
+        fs.writeFileSync(newPath, data);
+        product.model3D = `/uploads/${newFileName}`;
+        console.log('Update: Model saved at:', product.model3D);
+      } catch (error) {
+        console.error('Update Error:', error);
+        return res.status(400).json({ error: 'Could not upload 3D model' });
+      }
     }
 
     try {

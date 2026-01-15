@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   InputLabel,
   MenuItem,
@@ -16,6 +17,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import { getCategories, list } from './apiCore';
 import Card from './Card';
 
+const SECONDARY_COLOR = '#0A2F68';
+
 const Search = () => {
   const [data, setData] = useState({
     categories: [],
@@ -26,6 +29,7 @@ const Search = () => {
   });
 
   const { categories, category, search, results, searched } = data;
+  const location = useLocation();
 
   const loadCategories = () => {
     getCategories().then((data) => {
@@ -40,6 +44,29 @@ const Search = () => {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const searchQuery = query.get('search');
+    if (searchQuery) {
+      setData(prev => ({ ...prev, search: searchQuery }));
+      // Use the actual query value since state might not have updated yet
+      list({ search: searchQuery, category: category }).then(
+        (response) => {
+          if (response.error) {
+            console.log(response.error);
+          } else {
+            setData((prevData) => ({
+              ...prevData,
+              results: response,
+              searched: true,
+              search: searchQuery
+            }));
+          }
+        }
+      );
+    }
+  }, [location.search]);
 
   const searchData = () => {
     if (search) {
@@ -159,12 +186,20 @@ const Search = () => {
           type='submit'
           size='large'
           sx={{
-            px: 4,
-            height: 40,
-            backgroundColor: 'primary.main',
+            px: 6,
+            height: 48,
+            borderRadius: '40px',
+            backgroundColor: SECONDARY_COLOR,
+            textTransform: 'none',
+            fontSize: '16px',
+            fontWeight: 600,
+            boxShadow: '0 4px 12px rgba(10,47,104,0.2)',
             '&:hover': {
-              backgroundColor: 'primary.dark',
+              backgroundColor: '#082554',
+              boxShadow: '0 6px 16px rgba(10,47,104,0.3)',
+              transform: 'translateY(-1px)',
             },
+            transition: 'all 0.3s ease',
           }}
         >
           Search

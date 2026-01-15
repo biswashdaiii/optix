@@ -6,6 +6,7 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
@@ -17,6 +18,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 import Copyright from '../core/Copyright.jsx';
 import { signup } from '../auth/index.js';
+import { Player } from '@lottiefiles/react-lottie-player';
+import signupAnimation from '../assets/signup_animation.json';
 
 // Styled components
 const PageWrapper = styled(Box)(({ theme }) => ({
@@ -118,16 +121,17 @@ const StyledButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',
   fontSize: '16px',
   fontWeight: 600,
-  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+  backgroundColor: '#0A2F68',
+  color: '#ffffff',
+  boxShadow: 'none',
   transition: 'all 0.3s ease',
   '&:hover': {
-    background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+    backgroundColor: '#07214a',
+    boxShadow: 'none',
     transform: 'translateY(-2px)',
   },
   '&:disabled': {
-    background: '#e9ecef',
+    backgroundColor: '#e9ecef',
     color: '#6c757d',
   },
 }));
@@ -166,15 +170,15 @@ const GoogleButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',
   fontSize: '15px',
   fontWeight: 500,
-  border: '2px solid #e9ecef',
+  border: '1px solid #ced4da',
   color: '#212529',
   backgroundColor: '#ffffff',
-  transition: 'all 0.3s ease',
+  boxShadow: 'none',
+  transition: 'all 0.2s ease',
   '&:hover': {
     backgroundColor: '#f8f9fa',
-    borderColor: '#667eea',
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    borderColor: '#adb5bd',
+    boxShadow: 'none',
   },
 }));
 
@@ -187,9 +191,10 @@ export default function Signup() {
     success: false,
     loading: false,
     showPassword: false,
+    open: false,
   });
 
-  const { name, email, password, success, error, loading, showPassword } =
+  const { name, email, password, success, error, loading, showPassword, open } =
     values;
 
   const handleChange = (name) => (event) => {
@@ -210,6 +215,7 @@ export default function Signup() {
           error: data.error,
           success: false,
           loading: false,
+          open: true,
         });
       } else {
         setValues({
@@ -220,43 +226,44 @@ export default function Signup() {
           error: '',
           success: true,
           loading: false,
+          open: true,
         });
       }
     });
   };
 
-  const showError = () =>
-    error && (
-      <Alert
-        severity='error'
-        sx={{
-          width: '100%',
-          mb: 2,
-          borderRadius: '12px',
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-        }}
-      >
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setValues({ ...values, open: false });
+  };
+
+  const showError = () => (
+    <Snackbar
+      open={open && !!error}
+      autoHideDuration={6000}
+      onClose={handleClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert onClose={handleClose} severity='error' sx={{ width: '100%', borderRadius: '12px' }}>
         {error}
       </Alert>
-    );
+    </Snackbar>
+  );
 
-  const showSuccess = () =>
-    success && (
-      <Alert
-        severity='success'
-        sx={{
-          width: '100%',
-          mb: 2,
-          borderRadius: '12px',
-          backgroundColor: '#d4edda',
-          color: '#155724',
-        }}
-      >
-        New account created successfully! Please{' '}
-        <StyledLink to='/signin'>Sign In</StyledLink>.
+  const showSuccess = () => (
+    <Snackbar
+      open={open && success}
+      autoHideDuration={6000}
+      onClose={handleClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert onClose={handleClose} severity='success' sx={{ width: '100%', borderRadius: '12px' }}>
+        New account created successfully! Please <StyledLink to='/signin'>Sign In</StyledLink>.
       </Alert>
-    );
+    </Snackbar>
+  );
 
   const showLoading = () =>
     loading && (
@@ -272,9 +279,11 @@ export default function Signup() {
         {/* Left Panel with Illustration */}
         <LeftPanel>
           <IllustrationBox>
-            <img
-              src='https://cdni.iconscout.com/illustration/premium/thumb/sign-up-page-illustration-download-in-svg-png-gif-file-formats--mobile-application-user-interface-pack-design-development-illustrations-6430773.png'
-              alt='Sign up illustration'
+            <Player
+              autoplay
+              loop
+              src={signupAnimation}
+              style={{ height: '100%', width: '100%' }}
             />
           </IllustrationBox>
         </LeftPanel>

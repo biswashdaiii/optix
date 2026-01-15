@@ -11,8 +11,7 @@
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix frontend && npm run build --prefix frontend"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ashraf-kabir/mern-ecommerce.git"
+    "type": "git"
   },
   "keywords": [],
   "author": "Ashraf Kabir",
@@ -23,11 +22,11 @@
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
-    "braintree": "^3.33.1",
     "concurrently": "^9.2.0",
     "config": "^4.1.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-jwt": "^8.5.1",

@@ -402,7 +402,11 @@ const MaterialAppBar = () => {
 
           {/* Right Side Icons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButtonStyled aria-label='search'>
+            <IconButtonStyled
+              component={Link}
+              to='/shop'
+              aria-label='search'
+            >
               <Search />
             </IconButtonStyled>
 

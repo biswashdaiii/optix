@@ -235,7 +235,7 @@ const Cart = () => {
             variant='h6'
             sx={{ fontWeight: 700, color: SECONDARY_COLOR, minWidth: '100px', textAlign: 'right' }}
           >
-            ₹ {(product.price * product.count).toLocaleString()}
+            Rs {((product.price * product.count).toLocaleString())}
           </Typography>
 
           {/* Remove Button */}
@@ -290,7 +290,7 @@ const Cart = () => {
             Subtotal ({items.length} items)
           </Typography>
           <Typography variant='body1' sx={{ fontWeight: 600, color: SECONDARY_COLOR }}>
-            ₹ {calculateSubtotal().toLocaleString()}
+            Rs {calculateSubtotal().toLocaleString()}
           </Typography>
         </SummaryRow>
 
@@ -308,7 +308,7 @@ const Cart = () => {
             Tax (13%)
           </Typography>
           <Typography variant='body1' sx={{ fontWeight: 600, color: SECONDARY_COLOR }}>
-            ₹ {calculateTax().toLocaleString()}
+            Rs {calculateTax().toLocaleString()}
           </Typography>
         </SummaryRow>
 
@@ -319,19 +319,11 @@ const Cart = () => {
             Total
           </Typography>
           <Typography variant='h6' sx={{ fontWeight: 800, color: SECONDARY_COLOR }}>
-            ₹ {calculateTotal().toLocaleString()}
+            Rs {calculateTotal().toLocaleString()}
           </Typography>
         </SummaryRow>
 
-        <StyledButton
-          className='primary'
-          fullWidth
-          sx={{ mt: 3, mb: 2 }}
-          component={Link}
-          to='/checkout'
-        >
-          Proceed to Checkout
-        </StyledButton>
+        <Checkout products={items} setRun={setRun} run={run} />
 
         <Box
           sx={{

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import { read, listRelated } from './apiCore';
 import Card from './Card';
 import ShowImage from './ShowImage';
+import Checkout from './Checkout';
 import { addItem } from './cartHelpers';
 import moment from 'moment';
 import VirtualTryOn from './../components/VirtualTryOn.jsx';
@@ -32,6 +33,7 @@ import StarIcon from '@mui/icons-material/Star';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
+import CameraIcon from '@mui/icons-material/PhotoCamera';
 
 // Color palette
 const PRIMARY_COLOR = '#0A6A7A';
@@ -94,20 +96,20 @@ const OriginalPrice = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: '8px',
-  padding: '16px 40px',
+  borderRadius: '40px',
+  padding: '14px 40px',
   textTransform: 'none',
-  fontSize: '16px',
+  fontSize: '15px',
   fontWeight: 600,
   letterSpacing: '0.5px',
   transition: 'all 0.3s ease',
   boxShadow: 'none',
   '&.primary': {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: SECONDARY_COLOR,
     color: 'white',
     '&:hover': {
-      backgroundColor: '#085862',
-      boxShadow: '0 4px 12px rgba(10,106,122,0.3)',
+      backgroundColor: '#082554',
+      boxShadow: '0 8px 16px rgba(10,47,104,0.2)',
       transform: 'translateY(-2px)',
     },
   },
@@ -116,16 +118,16 @@ const StyledButton = styled(Button)(({ theme }) => ({
     color: 'white',
     '&:hover': {
       backgroundColor: '#082554',
-      boxShadow: '0 4px 12px rgba(10,47,104,0.3)',
+      boxShadow: '0 8px 16px rgba(10,47,104,0.2)',
       transform: 'translateY(-2px)',
     },
   },
   '&.tryon': {
-    backgroundColor: '#FF4444',
+    backgroundColor: SECONDARY_COLOR,
     color: 'white',
     '&:hover': {
-      backgroundColor: '#E63939',
-      boxShadow: '0 4px 12px rgba(255,68,68,0.3)',
+      backgroundColor: '#082554',
+      boxShadow: '0 8px 16px rgba(10,47,104,0.2)',
       transform: 'translateY(-2px)',
     },
   },
@@ -197,6 +199,61 @@ const StockBadge = styled(Chip)(({ theme, instock }) => ({
   },
 }));
 
+const DirectCheckoutBox = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: '16px',
+  backgroundColor: '#F8F9FA',
+  border: `1px solid ${BORDER_COLOR}`,
+  marginTop: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+  animation: 'slideDown 0.4s ease-out',
+  '@keyframes slideDown': {
+    from: { opacity: 0, transform: 'translateY(-10px)' },
+    to: { opacity: 1, transform: 'translateY(0)' },
+  },
+}));
+
+const FloatingTryOnBadge = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: '20px',
+  left: '20px',
+  zIndex: 10,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  cursor: 'pointer',
+  transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  '&:hover': {
+    transform: 'scale(1.1)',
+  },
+}));
+
+const CameraCircle = styled(Box)(({ theme }) => ({
+  width: '60px',
+  height: '60px',
+  backgroundColor: '#1A1A1A',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+  color: 'white',
+}));
+
+const TryOnLabel = styled(Typography)(({ theme }) => ({
+  backgroundColor: 'white',
+  color: '#1A1A1A',
+  padding: '6px 16px',
+  borderRadius: '20px',
+  fontSize: '11px',
+  fontWeight: 800,
+  letterSpacing: '1px',
+  marginTop: '-12px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  textTransform: 'uppercase',
+  border: '1px solid #EEEEEE',
+}));
+
 const Product = () => {
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -204,8 +261,10 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
   const [showTryOn, setShowTryOn] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const { productId } = useParams();
+  const navigate = useNavigate();
 
   const loadSingleProduct = (productId) => {
     setLoading(true);
@@ -237,6 +296,10 @@ const Product = () => {
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 3000);
     });
+  };
+
+  const handleBuyNow = () => {
+    setShowCheckout(!showCheckout);
   };
 
   // Calculate discount percentage
@@ -381,8 +444,14 @@ const Product = () => {
                   </Box>
 
                   {/* Main Product Image on the Right */}
-                  <Box sx={{ flex: 1 }}>
+                  <Box sx={{ flex: 1, position: 'relative' }}>
                     <ProductImageContainer elevation={0}>
+                      <FloatingTryOnBadge onClick={() => setShowTryOn(!showTryOn)}>
+                        <CameraCircle>
+                          <CameraIcon sx={{ fontSize: '30px' }} />
+                        </CameraCircle>
+                        <TryOnLabel>TRY-ON</TryOnLabel>
+                      </FloatingTryOnBadge>
                       {calculateDiscount() > 0 && (
                         <DiscountBadge>{calculateDiscount()}%</DiscountBadge>
                       )}
@@ -510,33 +579,55 @@ const Product = () => {
                   </Box>
 
                   {/* Action Buttons - UPDATED WITH VIRTUAL TRY-ON */}
-                  <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'nowrap' }}>
                     <StyledButton
-                      className='secondary'
+                      className='primary'
                       startIcon={<ShoppingCartIcon />}
                       disabled={product.quantity < 1}
                       onClick={handleAddToCart}
-                      sx={{ width: '197px', height: '48px', padding: 0 }}
+                      sx={{ flex: 1, minWidth: '160px', height: '56px' }}
                     >
                       {product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                     </StyledButton>
                     <StyledButton
-                      className='primary'
+                      className='secondary'
                       disabled={product.quantity < 1}
-                      onClick={handleAddToCart}
-                      sx={{ width: '197px', height: '48px', padding: 0 }}
+                      onClick={handleBuyNow}
+                      sx={{ flex: 1, minWidth: '160px', height: '56px' }}
                     >
-                      Buy Now
+                      {showCheckout ? 'Cancel Buy Now' : 'Buy Now'}
                     </StyledButton>
                     <StyledButton
                       className='tryon'
-                      startIcon={showTryOn ? <CloseIcon /> : <VisibilityIcon />}
+                      startIcon={<CameraIcon />}
                       onClick={() => setShowTryOn(!showTryOn)}
-                      sx={{ width: '197px', height: '48px', padding: 0 }}
+                      sx={{
+                        flex: 1,
+                        minWidth: '160px',
+                        height: '56px',
+                        backgroundColor: '#1A1A1A',
+                        '&:hover': {
+                          backgroundColor: '#333',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                        }
+                      }}
                     >
-                      {showTryOn ? 'Close Try-On' : 'Virtual Try-On'}
+                      TRY ON
                     </StyledButton>
                   </Box>
+
+                  {/* DIRECT CHECKOUT SECTION - NEW */}
+                  {showCheckout && product && (
+                    <DirectCheckoutBox elevation={0}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: SECONDARY_COLOR }}>
+                        Direct Checkout
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                        You are purchasing <strong>{product.name}</strong> for <strong>Rs {product.price.toLocaleString()}</strong>. Please enter your address below to proceed with eSewa.
+                      </Typography>
+                      <Checkout products={[{ ...product, count: 1 }]} />
+                    </DirectCheckoutBox>
+                  )}
 
                   {/* Features Grid */}
                   <Grid container spacing={2}>

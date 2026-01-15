@@ -8,11 +8,15 @@ import '../styles/VirtualTryOn.css';
 
 // 3D Anchor removed for production
 
+import { API } from '../config';
+
 // Head Occluder removed for armless mode
 
 // Glasses Model Component
-const GlassesModel = ({ position, rotation, scale }) => {
-  const { scene } = useGLTF('/models/glasses.glb');
+const GlassesModel = ({ position, rotation, scale, modelPath }) => {
+  // Use the provided model path or fallback to default
+  const glbPath = modelPath ? `${API}${modelPath}`.replace('/api', '') : '/models/glasses.glb';
+  const { scene } = useGLTF(glbPath);
 
   const processedModel = useMemo(() => {
     if (!scene) return null;
@@ -175,10 +179,10 @@ const VirtualTryOn = ({ product }) => {
 
           // Mirroring: MediaPipe is usually mirrored relative to camera
           // X: Mirror and center (0.5 is screen center)
-          const x = (0.5 - bridge.x) * 8.0;
+          const x = (0.5 - bridge.x) * 8.0 + (adj.offsetX || 0);
 
           // Y: Vertical alignment
-          const y = (0.5 - bridge.y) * 6.0 - 0.1;
+          const y = (0.5 - bridge.y) * 6.0 - 0.1 + (adj.offsetY || 0);
 
           // Z: High precision depth mapping
           const z = (0.5 - bridge.z) * 4.0 - 2.1 + (adj.offsetZ * 2.5);
@@ -254,6 +258,7 @@ const VirtualTryOn = ({ product }) => {
               <SceneContent
                 glassesTransform={glassesTransform}
                 faceDetected={faceDetected}
+                product={product}
               />
             </Canvas>
           </div>
@@ -289,7 +294,7 @@ const VirtualTryOn = ({ product }) => {
 
           <div className="controls-section">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>✨</span> Lenskart Auto-Fit
+              <span style={{ fontSize: '20px' }}>✨</span> Optix Auto-Fit
             </h3>
             <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>
               We've automatically calibrated the fit based on your face shape.
@@ -304,12 +309,31 @@ const VirtualTryOn = ({ product }) => {
               />
             </div>
 
-            <details className="advanced-tuning">
+            <details className="advanced-tuning" open>
               <summary style={{ fontSize: '12px', color: '#888', cursor: 'pointer', marginBottom: '10px' }}>
-                Advanced Calibration
+                Position Adjustments
               </summary>
+
               <div className="slider-group">
-                <label>Depth Nudge</label>
+                <label>Vertical Position (Up/Down)</label>
+                <input
+                  type="range" min="-0.5" max="0.5" step="0.01"
+                  value={adjustments.offsetY}
+                  onChange={(e) => setAdjustments(p => ({ ...p, offsetY: +e.target.value }))}
+                />
+              </div>
+
+              <div className="slider-group">
+                <label>Horizontal Position (Left/Right)</label>
+                <input
+                  type="range" min="-0.5" max="0.5" step="0.01"
+                  value={adjustments.offsetX}
+                  onChange={(e) => setAdjustments(p => ({ ...p, offsetX: +e.target.value }))}
+                />
+              </div>
+
+              <div className="slider-group">
+                <label>Depth (Stick to Face/Ear)</label>
                 <input
                   type="range" min="-0.5" max="0.5" step="0.01"
                   value={adjustments.offsetZ}
@@ -332,7 +356,7 @@ export default VirtualTryOn;
 
 // --- Helper Components for Three.js Scene ---
 
-const SceneContent = ({ glassesTransform, faceDetected }) => {
+const SceneContent = ({ glassesTransform, faceDetected, product }) => {
   return (
     <>
       <ambientLight intensity={3.0} />
@@ -347,6 +371,7 @@ const SceneContent = ({ glassesTransform, faceDetected }) => {
               position={[0, 0, 0]}
               rotation={[0, 0, 0]}
               scale={glassesTransform.scale}
+              modelPath={product?.model3D}
             />
           </group>
         )}

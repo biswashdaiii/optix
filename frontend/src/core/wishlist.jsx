@@ -277,7 +277,7 @@ const Wishlist = () => {
                           fontSize: '15px',
                         }}
                       >
-                        ${product.price.toFixed(2)}
+                        Rs{product.price.toFixed(2)}
                       </Typography>
                     </TableCell>
 

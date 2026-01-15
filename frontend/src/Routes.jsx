@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Signup from './user/Signup';
-import Signin from './user/Signin';
+import AuthPage from './user/AuthPage';
+// import Signup from './user/Signup'; // Unified in AuthPage
+// import Signin from './user/Signin'; // Unified in AuthPage
 import Home from './core/Home';
 import PrivateRoute from './auth/PrivateRoute';
 import Dashboard from './user/UserDashboard';
@@ -20,6 +21,11 @@ import CategoryList from './admin/CategoryList';
 import UsersList from './admin/UsersList';
 import NotFound from './core/NotFound';
 import AboutUs from "./core/AboutUs";
+import EsewaSuccess from './core/EsewaSuccess';
+import { Navigate } from 'react-router-dom';
+import CheckoutPage from './core/CheckoutPage';
+import PrivacyPolicy from './core/PrivacyPolicy';
+import TermsOfUse from './core/TermsOfUse';
 
 const AppRoutes = () => {
   return (
@@ -28,12 +34,16 @@ const AppRoutes = () => {
         {/* Public Routes */}
         <Route path='/' element={<Home />} />
         <Route path='/shop' element={<Shop />} />
-        <Route path='/signin' element={<Signin />} />
-        <Route path='/signup' element={<Signup />} />
+        <Route path='/signin' element={<AuthPage />} />
+        <Route path='/signup' element={<AuthPage />} />
         <Route path='/product/:productId' element={<Product />} />
         <Route path='/cart' element={<Cart />} />
         <Route path='/wishlist' element={<Wishlist />} /> {/* ADD THIS ROUTE */}
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/esewa/success" element={<EsewaSuccess />} />
+        <Route path="/esewa/failure" element={<Navigate to="/cart" />} />
+        <Route path='/privacy' element={<PrivacyPolicy />} />
+        <Route path='/terms' element={<TermsOfUse />} />
 
 
         {/* Private Routes */}
@@ -50,6 +60,15 @@ const AppRoutes = () => {
           element={
             <PrivateRoute>
               <Profile />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path='/checkout'
+          element={
+            <PrivateRoute>
+              <CheckoutPage />
             </PrivateRoute>
           }
         />

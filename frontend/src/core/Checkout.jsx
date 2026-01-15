@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,41 +9,46 @@ import {
   Stack,
 } from '@mui/material';
 import {
-  getBraintreeClientToken,
-  processPayment,
   createOrder,
+  getEsewaSignature,
 } from './apiCore';
 import { emptyCart } from './cartHelpers';
 import { isAuthenticated } from '../auth';
 import { Link } from 'react-router-dom';
-import DropIn from 'braintree-web-drop-in-react';
+import { v4 as uuidv4 } from 'uuid';
+import { styled } from '@mui/material/styles';
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: '40px',
+  padding: '14px 40px',
+  textTransform: 'none',
+  fontSize: '16px',
+  fontWeight: 600,
+  transition: 'all 0.3s ease',
+  boxShadow: 'none',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+  }
+}));
+
+const StyledTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    backgroundColor: '#fff',
+  },
+});
 
 const Checkout = ({ products, setRun = (f) => f, run = undefined }) => {
   const [data, setData] = useState({
     loading: false,
     success: false,
-    clientToken: null,
     error: '',
-    instance: {},
     address: '',
   });
 
   const userId = isAuthenticated() && isAuthenticated().user._id;
   const token = isAuthenticated() && isAuthenticated().token;
-
-  const getToken = (userId, token) => {
-    getBraintreeClientToken(userId, token).then((res) => {
-      if (res.error) {
-        setData((prev) => ({ ...prev, error: res.error }));
-      } else {
-        setData((prev) => ({ ...prev, clientToken: res.clientToken }));
-      }
-    });
-  };
-
-  useEffect(() => {
-    getToken(userId, token);
-  }, []);
 
   const handleAddress = (event) => {
     setData({ ...data, address: event.target.value });
@@ -54,51 +59,64 @@ const Checkout = ({ products, setRun = (f) => f, run = undefined }) => {
       return currentValue + nextValue.count * nextValue.price;
     }, 0);
 
-  const buy = () => {
+  const payWithEsewa = () => {
+    if (!data.address) {
+      setData({ ...data, error: 'Please provide a delivery address' });
+      return;
+    }
     setData({ ...data, loading: true });
-    let nonce;
-    data.instance
-      .requestPaymentMethod()
+
+    const transaction_uuid = uuidv4();
+    const amount = getTotal().toString();
+    const product_code = 'EPAYTEST';
+
+    getEsewaSignature(userId, token, { amount, transaction_uuid, product_code })
       .then((res) => {
-        nonce = res.nonce;
-        const paymentData = {
-          paymentMethodNonce: nonce,
-          amount: getTotal(products),
-        };
+        if (res.error) {
+          setData({ ...data, error: res.error, loading: false });
+        } else {
+          const orderData = {
+            products: products,
+            amount: amount,
+            address: data.address,
+            transaction_uuid: transaction_uuid,
+          };
+          localStorage.setItem('pending_order', JSON.stringify(orderData));
 
-        processPayment(userId, token, paymentData)
-          .then((response) => {
-            const createOrderData = {
-              products: products,
-              transaction_id: response.transaction.id,
-              amount: response.transaction.amount,
-              address: data.address,
-            };
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = 'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
 
-            createOrder(userId, token, createOrderData)
-              .then(() => {
-                emptyCart(() => {
-                  setRun(!run);
-                  setData({
-                    loading: false,
-                    success: true,
-                    clientToken: data.clientToken,
-                    instance: {},
-                    address: '',
-                  });
-                });
-              })
-              .catch(() => setData({ ...data, loading: false }));
-          })
-          .catch(() => setData({ ...data, loading: false }));
+          const fields = {
+            amount: amount,
+            tax_amount: '0',
+            total_amount: amount,
+            transaction_uuid: transaction_uuid,
+            product_code: product_code,
+            product_service_charge: '0',
+            product_delivery_charge: '0',
+            success_url: `${window.location.origin}/esewa/success`,
+            failure_url: `${window.location.origin}/esewa/failure`,
+            signed_field_names: 'total_amount,transaction_uuid,product_code',
+            signature: res.signature,
+          };
+
+          for (const key in fields) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+          }
+
+          document.body.appendChild(form);
+          form.submit();
+        }
       })
-      .catch((error) => {
-        setData({ ...data, error: error.message });
-      });
+      .catch((err) => setData({ ...data, error: err.message, loading: false }));
   };
 
-  const showDropIn = () =>
-    data.clientToken !== null &&
+  const showEsewaCheckout = () =>
     products.length > 0 && (
       <Box sx={{ mt: 2 }}>
         <TextField
@@ -112,62 +130,89 @@ const Checkout = ({ products, setRun = (f) => f, run = undefined }) => {
           sx={{ mb: 2 }}
         />
 
-        <DropIn
-          options={{
-            authorization: data.clientToken,
-            paypal: { flow: 'vault' },
-          }}
-          onInstance={(instance) => (data.instance = instance)}
-        />
-
         <Button
-          onClick={buy}
+          onClick={payWithEsewa}
           variant='contained'
           color='success'
           fullWidth
-          sx={{ mt: 2 }}
+          sx={{ mt: 2, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
         >
-          Pay ${getTotal()}
+          Pay Rs {getTotal().toLocaleString()} via eSewa
         </Button>
       </Box>
     );
 
   return (
     <Box>
-      <Typography variant='h6' gutterBottom>
-        Total: ${getTotal()}
+      <Typography variant='h6' gutterBottom sx={{ fontWeight: 600 }}>
+        Total Amount: Rs {getTotal().toLocaleString()}
       </Typography>
 
       {data.loading && (
-        <Stack alignItems='center' sx={{ mb: 2 }}>
-          <CircularProgress color='error' />
+        <Stack alignItems='center' sx={{ mb: 3, p: 3, backgroundColor: 'rgba(76, 175, 80, 0.05)', borderRadius: '16px' }}>
+          <CircularProgress color='success' size={40} />
+          <Typography sx={{ mt: 2, fontWeight: 600, color: 'success.dark' }}>
+            Preparing your secure payment...
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            You will be redirected to eSewa in a moment
+          </Typography>
         </Stack>
       )}
 
       {data.success && (
-        <Alert severity='success' sx={{ mb: 2 }}>
+        <Alert severity='success' sx={{ mb: 2, borderRadius: '12px' }}>
           🎉 Thanks! Your payment was successful.
         </Alert>
       )}
 
       {data.error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error' sx={{ mb: 2, borderRadius: '12px' }}>
           {data.error}
         </Alert>
       )}
 
       {isAuthenticated() ? (
-        showDropIn()
+        products.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <StyledTextField
+              label='Delivery Address'
+              placeholder='Enter your full delivery address...'
+              fullWidth
+              multiline
+              minRows={3}
+              value={data.address}
+              onChange={handleAddress}
+              sx={{ mb: 3 }}
+            />
+
+            <StyledButton
+              onClick={payWithEsewa}
+              variant='contained'
+              color='success'
+              fullWidth
+              disabled={data.loading}
+              sx={{
+                backgroundColor: '#0A2F68',
+                height: '56px',
+                '&:hover': { backgroundColor: '#07214a' }
+              }}
+            >
+              {data.loading ? 'Processing...' : `Pay Rs ${getTotal().toLocaleString()} via eSewa`}
+            </StyledButton>
+          </Box>
+        )
       ) : (
-        <Button
+        <StyledButton
           component={Link}
           to='/signin'
           variant='contained'
           color='primary'
           fullWidth
+          sx={{ backgroundColor: '#0A2F68' }}
         >
           Sign in to checkout
-        </Button>
+        </StyledButton>
       )}
     </Box>
   );
